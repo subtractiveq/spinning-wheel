@@ -1,151 +1,331 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spinning Wheel Name Picker</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #wheel { width: 400px; height: 400px; margin: 20px auto; border-radius: 50%; border: 5px solid #333; position: relative; overflow: hidden; }
-        #wheel canvas { width: 100%; height: 100%; }
-        #spinButton { padding: 10px 20px; font-size: 18px; cursor: pointer; margin-top: 20px; }
-        #nameInput { width: 300px; padding: 10px; font-size: 16px; }
-        #addButton { padding: 10px 15px; font-size: 16px; margin-left: 10px; }
-        ul { list-style-type: none; padding: 0; max-width: 400px; margin: 20px auto; text-align: left; }
-        li { background: #f0f0f0; margin-bottom: 5px; padding: 8px; border-radius: 4px; }
-        #result { font-size: 24px; margin-top: 20px; height: 30px; }
-    </style>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2566">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
 </head>
 <body>
-    <h1>Spinning Wheel Name Picker</h1>
-    <input id="nameInput" placeholder="Enter name" />
-    <button id="addButton">Add Name</button>
-    <ul id="nameList"></ul>
-    <div id="wheel">
-        <canvas id="wheelCanvas" width="400" height="400"></canvas>
-    </div>
-    <button id="spinButton" disabled>Spin the Wheel</button>
-    <div id="result"></div>
-
-<script>
-    const canvas = document.getElementById('wheelCanvas');
-    const ctx = canvas.getContext('2d');
-    const spinButton = document.getElementById('spinButton');
-    const nameInput = document.getElementById('nameInput');
-    const addButton = document.getElementById('addButton');
-    const nameListEl = document.getElementById('nameList');
-    const resultEl = document.getElementById('result');
-
-    let names = [];
-    let startAngle = 0;
-    let arc = 0;
-    let spinTimeout = null;
-    let spinAngleStart = 0;
-    let spinTime = 0;
-    let spinTimeTotal = 0;
-
-    function drawWheel() {
-        const outsideRadius = 180;
-        const textRadius = 140;
-        const insideRadius = 40;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        arc = Math.PI / (names.length / 2);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.font = 'bold 14px Arial';
-
-        for (let i = 0; i < names.length; i++) {
-            const angle = startAngle + i * arc;
-            ctx.fillStyle = i % 2 === 0 ? '#ffcc00' : '#ff9900';
-
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, outsideRadius, angle, angle + arc, false);
-            ctx.arc(canvas.width / 2, canvas.height / 2, insideRadius, angle + arc, angle, true);
-            ctx.stroke();
-            ctx.fill();
-
-            ctx.save();
-            ctx.fillStyle = '#000';
-            ctx.translate(
-                canvas.width / 2 + Math.cos(angle + arc / 2) * textRadius,
-                canvas.height / 2 + Math.sin(angle + arc / 2) * textRadius
-            );
-            ctx.rotate(angle + arc / 2 + Math.PI / 2);
-            const text = names[i];
-            ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
-            ctx.restore();
-        }
-    }
-
-    function spin() {
-        spinAngleStart = Math.random() * 10 + 10;
-        spinTime = 0;
-        spinTimeTotal = Math.random() * 3000 + 4000;
-        rotateWheel();
-    }
-
-    function rotateWheel() {
-        spinTime += 30;
-        if (spinTime >= spinTimeTotal) {
-            stopRotateWheel();
-            return;
-        }
-        const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
-        startAngle += (spinAngle * Math.PI / 180);
-        drawWheel();
-        spinTimeout = setTimeout(rotateWheel, 30);
-    }
-
-    function stopRotateWheel() {
-        clearTimeout(spinTimeout);
-        const degrees = startAngle * 180 / Math.PI + 90;
-        const arcd = arc * 180 / Math.PI;
-        const index = Math.floor((360 - (degrees % 360)) / arcd);
-        const pickedName = names[index];
-        resultEl.textContent = `Picked: ${pickedName}`;
-        names.splice(index, 1);
-        updateNameList();
-        drawWheel();
-        if (names.length === 0) {
-            spinButton.disabled = true;
-        }
-    }
-
-    function easeOut(t, b, c, d) {
-        const ts = (t /= d) * t;
-        const tc = ts * t;
-        return b + c * (tc + -3 * ts + 3 * t);
-    }
-
-    function updateNameList() {
-        nameListEl.innerHTML = '';
-        names.forEach(name => {
-            const li = document.createElement('li');
-            li.textContent = name;
-            nameListEl.appendChild(li);
-        });
-        spinButton.disabled = names.length === 0;
-    }
-
-    addButton.addEventListener('click', () => {
-        const name = nameInput.value.trim();
-        if (name && !names.includes(name)) {
-            names.push(name);
-            updateNameList();
-            drawWheel();
-            nameInput.value = '';
-        }
-    });
-
-    spinButton.addEventListener('click', () => {
-        if (names.length > 0) {
-            spin();
-        }
-    });
-
-    drawWheel();
-</script>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Spinning Wheel Name Picker&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- layout: wheel on left, paste panel on right --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.layout {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>gap: 24px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>align-items: flex-start;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>flex-wrap: wrap;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.leftCol { width: 440px; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.rightCol { width: 360px; text-align: left; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>#wheel { width: 400px; height: 400px; margin: 20px auto; border-radius: 50%; border: 5px solid #333; position: relative; overflow: hidden; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#wheel canvas { width: 100%; height: 100%; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>#spinButton { padding: 10px 20px; font-size: 18px; cursor: pointer; margin-top: 10px; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#nameInput { width: 260px; padding: 10px; font-size: 16px; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#addButton { padding: 10px 15px; font-size: 16px; margin-left: 10px; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>ul { list-style-type: none; padding: 0; max-width: 400px; margin: 20px auto; text-align: left; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>li { background: #f0f0f0; margin-bottom: 5px; padding: 8px; border-radius: 4px; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>#result { font-size: 24px; margin-top: 14px; height: 30px; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- bulk panel --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.panel {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: 1px solid #ddd;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 8px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: #fafafa;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#bulkInput {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>height: 220px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>resize: vertical;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-sizing: border-box;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.rowBtns {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>flex-wrap: wrap;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>gap: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.rowBtns button {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 10px 12px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#bulkStatus {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 13px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: #333;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>min-height: 18px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.hint {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin: 8px 0 0 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 12px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: #555;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;h1&gt;Spinning Wheel Name Picker&lt;/h1&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="layout"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="leftCol"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;input id="nameInput" placeholder="Enter name" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;button id="addButton"&gt;Add Name&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;ul id="nameList"&gt;&lt;/ul&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="wheel"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;canvas id="wheelCanvas" width="400" height="400"&gt;&lt;/canvas&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="spinButton" disabled&gt;Spin the Wheel&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="result"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="rightCol"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="panel"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;h3 style="margin:0 0 10px 0;"&gt;Paste class list&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;textarea id="bulkInput" placeholder="Paste names here…</p>
+<p class="p1">One per line (recommended)</p>
+<p class="p1">or comma-separated"&gt;&lt;/textarea&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="rowBtns"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button id="bulkAddButton"&gt;Add List&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button id="bulkReplaceButton"&gt;Replace Wheel&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button id="clearAllButton"&gt;Clear All&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div id="bulkStatus"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;p class="hint"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>Tips: You can paste from Excel/Sheets (one name per row). Blank lines are ignored and duplicates won’t be added.</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const canvas = document.getElementById('wheelCanvas');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ctx = canvas.getContext('2d');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const spinButton = document.getElementById('spinButton');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const nameInput = document.getElementById('nameInput');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const addButton = document.getElementById('addButton');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const nameListEl = document.getElementById('nameList');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const resultEl = document.getElementById('result');</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const bulkInput = document.getElementById('bulkInput');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const bulkAddButton = document.getElementById('bulkAddButton');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const bulkReplaceButton = document.getElementById('bulkReplaceButton');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const clearAllButton = document.getElementById('clearAllButton');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const bulkStatus = document.getElementById('bulkStatus');</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let names = [];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let startAngle = 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let arc = 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let spinTimeout = null;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let spinAngleStart = 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let spinTime = 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let spinTimeTotal = 0;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function drawWheel() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const outsideRadius = 180;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const textRadius = 140;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const insideRadius = 40;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>ctx.clearRect(0, 0, canvas.width, canvas.height);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (names.length === 0) return;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>arc = Math.PI / (names.length / 2);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>ctx.strokeStyle = '#333';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>ctx.lineWidth = 2;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>ctx.font = 'bold 14px Arial';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; names.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const angle = startAngle + i * arc;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.fillStyle = i % 2 === 0 ? '#ffcc00' : '#ff9900';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.beginPath();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.arc(canvas.width / 2, canvas.height / 2, outsideRadius, angle, angle + arc, false);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.arc(canvas.width / 2, canvas.height / 2, insideRadius, angle + arc, angle, true);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.stroke();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.fill();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.save();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.fillStyle = '#000';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.translate(</p>
+<p class="p1"><span class="Apple-converted-space">                </span>canvas.width / 2 + Math.cos(angle + arc / 2) * textRadius,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>canvas.height / 2 + Math.sin(angle + arc / 2) * textRadius</p>
+<p class="p1"><span class="Apple-converted-space">            </span>);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.rotate(angle + arc / 2 + Math.PI / 2);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const text = names[i];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.fillText(text, -ctx.measureText(text).width / 2, 0);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ctx.restore();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function spin() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinAngleStart = Math.random() * 10 + 10;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinTime = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinTimeTotal = Math.random() * 3000 + 4000;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>rotateWheel();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function rotateWheel() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinTime += 30;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (spinTime &gt;= spinTimeTotal) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>stopRotateWheel();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>startAngle += (spinAngle * Math.PI / 180);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>drawWheel();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinTimeout = setTimeout(rotateWheel, 30);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function stopRotateWheel() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>clearTimeout(spinTimeout);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const degrees = startAngle * 180 / Math.PI + 90;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const arcd = arc * 180 / Math.PI;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const index = Math.floor((360 - (degrees % 360)) / arcd);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const pickedName = names[index];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>resultEl.textContent = `Picked: ${pickedName}`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>names.splice(index, 1);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>updateNameList();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>drawWheel();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (names.length === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>spinButton.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function easeOut(t, b, c, d) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const ts = (t /= d) * t;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tc = ts * t;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return b + c * (tc + -3 * ts + 3 * t);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function updateNameList() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>nameListEl.innerHTML = '';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>names.forEach(name =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const li = document.createElement('li');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>li.textContent = name;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>nameListEl.appendChild(li);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinButton.disabled = names.length === 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function normalizeName(s) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Trim and collapse multiple spaces</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return s.trim().replace(/\s+/g, ' ');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function parseBulkNames(text) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Accept: newline, comma, semicolon, or tab separated</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// (Tabs happen a lot when pasting from Sheets/Excel)</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return text</p>
+<p class="p1"><span class="Apple-converted-space">            </span>.split(/[\n,;\t]+/g)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>.map(normalizeName)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>.filter(Boolean);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function addNames(list) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const before = names.length;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let added = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (const n of list) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (!names.includes(n)) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>names.push(n);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>added++;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const after = names.length;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>updateNameList();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>drawWheel();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return { before, after, added, skipped: list.length - added };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Single-add</p>
+<p class="p1"><span class="Apple-converted-space">    </span>addButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const name = normalizeName(nameInput.value);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (name &amp;&amp; !names.includes(name)) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>names.push(name);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>updateNameList();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>drawWheel();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>nameInput.value = '';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Enter key for single-add</p>
+<p class="p1"><span class="Apple-converted-space">    </span>nameInput.addEventListener('keydown', (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (e.key === 'Enter') addButton.click();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Bulk add</p>
+<p class="p1"><span class="Apple-converted-space">    </span>bulkAddButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const list = parseBulkNames(bulkInput.value);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (list.length === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>bulkStatus.textContent = 'Nothing to add (paste some names first).';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const { added, skipped } = addNames(list);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>bulkStatus.textContent = `Added ${added} name(s). Skipped ${skipped} duplicate/blank item(s).`;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Bulk replace</p>
+<p class="p1"><span class="Apple-converted-space">    </span>bulkReplaceButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const list = parseBulkNames(bulkInput.value);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (list.length === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>bulkStatus.textContent = 'Nothing to load (paste some names first).';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>names = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>startAngle = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>resultEl.textContent = '';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const { added, skipped } = addNames(list);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>bulkStatus.textContent = `Loaded ${added} name(s). Skipped ${skipped} duplicate/blank item(s).`;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Clear all</p>
+<p class="p1"><span class="Apple-converted-space">    </span>clearAllButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>names = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>startAngle = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>resultEl.textContent = '';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>bulkStatus.textContent = 'Cleared.';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>updateNameList();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>ctx.clearRect(0, 0, canvas.width, canvas.height);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>spinButton.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>spinButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (names.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>spin();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>drawWheel();</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
 </body>
 </html>
